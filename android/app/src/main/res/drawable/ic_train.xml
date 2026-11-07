@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Caisse -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M41,30h26a7,7 0 0 1 7,7v31a7,7 0 0 1 -7,7h-26a7,7 0 0 1 -7,-7v-31a7,7 0 0 1 7,-7z" />
+    <!-- Pare-brise -->
+    <path android:fillColor="#FF3FA9F5"
+        android:pathData="M40,38h28v15h-28z" />
+    <!-- Feux -->
+    <path android:fillColor="#FF0B1F33"
+        android:pathData="M44,64m-3,0a3,3 0 1 0 6,0a3,3 0 1 0 -6,0" />
+    <path android:fillColor="#FF0B1F33"
+        android:pathData="M64,64m-3,0a3,3 0 1 0 6,0a3,3 0 1 0 -6,0" />
+    <!-- Rails -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M42,75l-7,9h5l7,-9z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M66,75l7,9h-5l-7,-9z" />
+</vector>

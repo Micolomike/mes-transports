@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mes transports</string>
+    <string name="widget_name">Mes transports</string>
+    <string name="widget_description">RER E et ligne 14 : état du trafic et prochains départs</string>
+</resources>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_racine"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_fond"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/w_point"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@null"
+            android:src="@drawable/point" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trajet"
+            android:textColor="@color/encre"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/w_maj"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:paddingEnd="4dp"
+            android:textColor="@color/encre_pale"
+            android:textSize="12sp" />
+
+        <ImageView
+            android:id="@+id/w_actualiser"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="Actualiser"
+            android:padding="6dp"
+            android:src="@drawable/ic_actualiser" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/w_resume"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="Toucher pour configurer"
+        android:textColor="@color/encre"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/w_sens1"
+        style="@style/WidgetSens"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/w_departs1"
+        style="@style/WidgetDeparts"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/w_sens2"
+        style="@style/WidgetSens"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/w_departs2"
+        style="@style/WidgetDeparts"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/w_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:textColor="@color/encre_pale"
+        android:textSize="11sp"
+        android:visibility="gone" />
+</LinearLayout>

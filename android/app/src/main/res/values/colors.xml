@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fond">#FF0B1620</color>
+    <color name="carte">#FF15232F</color>
+    <color name="encre">#FFF2F5F7</color>
+    <color name="encre_pale">#FF9AA7B0</color>
+    <color name="accent">#FF3FA9F5</color>
+    <color name="icone_fond">#FF0B1F33</color>
+</resources>
