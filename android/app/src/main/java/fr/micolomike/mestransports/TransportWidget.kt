@@ -148,7 +148,12 @@ class TransportWidget : AppWidgetProvider() {
                         ajouter(sb, " suppr.", ForegroundColorSpan(ROUGE))
                     }
                     d.retard > 0 -> {
-                        val c = if (d.retard >= 10) ROUGE else ORANGE
+                        // Petit retard (< 5 min) : signalé sans couleur d'alerte
+                        val c = when {
+                            d.retard >= 10 -> ROUGE
+                            d.retard >= Prim.SEUIL_ORANGE -> ORANGE
+                            else -> ENCRE
+                        }
                         ajouter(sb, d.heure, ForegroundColorSpan(c), StyleSpan(Typeface.BOLD))
                         ajouter(sb, " +${d.retard}", ForegroundColorSpan(c))
                     }

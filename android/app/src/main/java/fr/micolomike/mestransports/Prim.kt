@@ -28,6 +28,9 @@ object Prim {
     private const val REF_HAUSSMANN = "STIF:StopArea:SP:58718:"
     private const val REF_EMERAINVILLE = "STIF:StopArea:SP:43074:"
 
+    /** Retard (min) à partir duquel la pastille passe à l'orange. */
+    const val SEUIL_ORANGE = 5
+
     val PARIS: ZoneId = ZoneId.of("Europe/Paris")
 
     // Trains de la branche Tournan (ceux qui desservent Emerainville)
@@ -76,10 +79,10 @@ object Prim {
             .filter { p -> EXCLURE_VERS_PARIS.none { sansAccents(p.destination).contains(it) } }
             .take(3)
 
-        // Niveau global : vert à l'heure, orange retard < 10 min ou incident, rouge >= 10 min, supprimé ou bloquant
+        // Niveau global : vert à l'heure ou retard < 5 min, orange retard de 5 à 9 min ou incident, rouge >= 10 min, supprimé ou bloquant
         val tous = versTournan + versParis
         var niveau = Niveau.VERT
-        if (tous.any { it.retardMin >= 1 } || incidents.isNotEmpty()) niveau = Niveau.ORANGE
+        if (tous.any { it.retardMin >= SEUIL_ORANGE } || incidents.isNotEmpty()) niveau = Niveau.ORANGE
         if (tous.any { it.supprime || it.retardMin >= 10 } || incidents.any { it.bloquant }) niveau = Niveau.ROUGE
         if (tous.isEmpty() && incidents.isEmpty()) niveau = Niveau.GRIS
 

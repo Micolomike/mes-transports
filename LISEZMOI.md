@@ -4,7 +4,7 @@ Widget Android d'écran d'accueil pour le trajet RER E (Emerainville ↔ Haussma
 
 ## Ce qu'affiche le widget
 
-- Pastille de couleur : vert (à l'heure), orange (retard de moins de 10 min ou incident), rouge (retard de 10 min ou plus, train supprimé, incident bloquant), gris (données indisponibles).
+- Pastille de couleur : vert (à l'heure ou retard de moins de 5 min), orange (retard de 5 à 9 min ou incident), rouge (retard de 10 min ou plus, train supprimé, incident bloquant), gris (données indisponibles).
 - L'incident principal en cours sur le RER E ou la ligne 14 (accès en gare et gares hors trajet ignorés).
 - Les 3 prochains départs dans chaque sens : Emerainville → St-Lazare et St-Lazare → Tournan, avec le retard (+3) ou la suppression. Le matin, le sens vers Paris est en premier ; l'après-midi, le retour.
 - Le bouton ↻ actualise immédiatement ; un appui ailleurs ouvre l'appli.
