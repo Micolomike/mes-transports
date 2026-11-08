@@ -66,6 +66,7 @@ object Stockage {
     const val CLE_ETAT = "etat"
     private const val CLE_JETON = "jeton_prim"
     private const val CLE_PLAGES = "plages_seulement"
+    private const val CLE_DERNIER_APPEL = "dernier_appel_auto"
     const val CLE_ERREUR = "erreur"
 
     fun prefs(ctx: Context) = ctx.getSharedPreferences(FICHIER, Context.MODE_PRIVATE)
@@ -75,6 +76,9 @@ object Stockage {
 
     fun plagesSeulement(ctx: Context): Boolean = prefs(ctx).getBoolean(CLE_PLAGES, true)
     fun enregistrerPlages(ctx: Context, v: Boolean) = prefs(ctx).edit().putBoolean(CLE_PLAGES, v).apply()
+
+    fun dernierAppelAuto(ctx: Context): Long = prefs(ctx).getLong(CLE_DERNIER_APPEL, 0L)
+    fun enregistrerAppelAuto(ctx: Context, t: Long) = prefs(ctx).edit().putLong(CLE_DERNIER_APPEL, t).apply()
 
     fun etat(ctx: Context): Etat? = prefs(ctx).getString(CLE_ETAT, null)?.let { Etat.depuisJson(it) }
 

@@ -119,7 +119,7 @@
 
         <TextView
             style="@style/Aide"
-            android:text="Toutes les 15 minutes (minimum imposé par Android), du lundi au vendredi de 6h00 à 9h15 et de 16h00 à 18h15. Désactivé : toutes les 15 minutes en permanence. Le bouton ↻ du widget actualise à tout moment." />
+            android:text="Toutes les 5 minutes environ, du lundi au vendredi de 5h00 à 19h00 (Android peut espacer les mises à jour quand le téléphone est en veille). Désactivé : toutes les 15 minutes en permanence. Le bouton ↻ du widget actualise à tout moment." />
 
         <Button
             android:id="@+id/batterie"

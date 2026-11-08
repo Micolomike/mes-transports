@@ -12,7 +12,7 @@ Widget Android d'écran d'accueil pour le trajet RER E (Emerainville ↔ Haussma
 ## Mises à jour
 
 - Automatiques toutes les 15 minutes (minimum imposé par Android pour une tâche de fond).
-- Par défaut, seulement aux heures de trajet : lundi à vendredi, 6h00 à 9h15 et 16h00 à 18h15. Réglable dans l'appli.
+- Par défaut, toutes les 5 minutes environ du lundi au vendredi de 5h00 à 19h00 (comme le widget Windows), rien en dehors. Réglable dans l'appli.
 - Sur Samsung, exclure l'appli de l'optimisation de batterie (bouton dans l'appli), sinon One UI peut retarder les mises à jour.
 
 ## Installation
