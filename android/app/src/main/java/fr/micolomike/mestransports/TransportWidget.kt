@@ -43,6 +43,7 @@ class TransportWidget : AppWidgetProvider() {
         private const val ACTION_ACTUALISER = "fr.micolomike.mestransports.ACTUALISER"
 
         private val VERT = Color.parseColor("#2FBF71")
+        private val JAUNE = Color.parseColor("#F2D338")
         private val ORANGE = Color.parseColor("#F5A524")
         private val ROUGE = Color.parseColor("#E5484D")
         private val GRIS = Color.parseColor("#8B949E")
@@ -148,10 +149,11 @@ class TransportWidget : AppWidgetProvider() {
                         ajouter(sb, " suppr.", ForegroundColorSpan(ROUGE))
                     }
                     d.retard > 0 -> {
-                        // Petit retard (< 5 min) : signalé sans couleur d'alerte
+                        // 1 min : sans couleur ; 2 à 4 min : jaune ; 5 à 10 min : orange ; plus de 10 min : rouge
                         val c = when {
-                            d.retard >= 10 -> ROUGE
-                            d.retard >= Prim.SEUIL_ORANGE -> ORANGE
+                            d.retard > 10 -> ROUGE
+                            d.retard > 4 -> ORANGE
+                            d.retard >= 2 -> JAUNE
                             else -> ENCRE
                         }
                         ajouter(sb, d.heure, ForegroundColorSpan(c), StyleSpan(Typeface.BOLD))
