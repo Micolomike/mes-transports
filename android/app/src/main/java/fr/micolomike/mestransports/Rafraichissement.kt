@@ -87,14 +87,13 @@ object Planif {
     private val reseau = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
     /**
-     * Tâche de secours toutes les 15 min (minimum imposé par Android pour une tâche périodique).
+     * (Désactivé) Tâche de secours toutes les 15 min (minimum imposé par Android pour une tâche périodique).
      * Elle relance la chaîne de 5 minutes à l'entrée dans la plage ou si la chaîne s'est interrompue.
      */
     fun programmer(ctx: Context) {
-        val req = PeriodicWorkRequestBuilder<RafraichirWorker>(15, TimeUnit.MINUTES)
-            .setConstraints(reseau)
-            .build()
-        WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(PERIODIQUE, ExistingPeriodicWorkPolicy.KEEP, req)
+        // Mise à jour manuelle uniquement (bouton ↻ du widget) : on annule toute tâche
+        // automatique laissée par une version précédente, pour ne plus consommer le quota PRIM.
+        arreter(ctx)
     }
 
     /** Mise à jour immédiate (bouton du widget, ouverture de l'appli, jeton enregistré). */

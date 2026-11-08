@@ -114,12 +114,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="Seulement aux heures de trajet"
+            android:visibility="gone"
             android:textColor="@color/encre"
             android:textSize="16sp" />
 
         <TextView
             style="@style/Aide"
-            android:text="Toutes les 5 minutes environ, du lundi au vendredi de 5h00 à 19h00 (Android peut espacer les mises à jour quand le téléphone est en veille). Désactivé : toutes les 15 minutes en permanence. Le bouton ↻ du widget actualise à tout moment." />
+            android:text="Aucune mise à jour automatique, pour économiser le quota PRIM : appuie sur le bouton ↻ du widget (ou sur Actualiser ici) pour obtenir le trafic et les prochains départs." />
 
         <Button
             android:id="@+id/batterie"

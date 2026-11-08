@@ -22,9 +22,9 @@ import java.time.format.DateTimeFormatter
 class TransportWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        // Pas d'appel automatique : seul le bouton ↻ interroge PRIM (quota)
         dessiner(context)
         Planif.programmer(context)
-        Planif.maintenant(context)
     }
 
     override fun onEnabled(context: Context) {

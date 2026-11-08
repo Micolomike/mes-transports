@@ -61,9 +61,6 @@ class MainActivity : Activity() {
             toast("Jeton enregistré, mise à jour en cours")
         }
 
-        val plages = findViewById<Switch>(R.id.plages)
-        plages.isChecked = Stockage.plagesSeulement(this)
-        plages.setOnCheckedChangeListener { _, coche -> Stockage.enregistrerPlages(this, coche) }
 
         findViewById<Button>(R.id.actualiser).setOnClickListener {
             apercu.text = "Mise à jour…"
@@ -76,7 +73,6 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.epingler).setOnClickListener { epinglerWidget() }
 
         Planif.programmer(this)
-        if (Stockage.jeton(this).isNotEmpty()) Planif.maintenant(this)
     }
 
     override fun onResume() {
