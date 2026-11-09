@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.graphics.Typeface
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -109,9 +110,14 @@ class TransportWidget : AppWidgetProvider() {
                 )
                 v.setOnClickPendingIntent(R.id.w_racine, ouvrir)
 
-                val actualiser = PendingIntent.getBroadcast(
-                    ctx, 2,
-                    Intent(ctx, TransportWidget::class.java).setAction(ACTION_ACTUALISER),
+                // Bouton ↻ : service de premier plan (accès réseau garanti, voir ServiceActualiser)
+                val actualiser = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    PendingIntent.getForegroundService(
+                        ctx, 3, Intent(ctx, ServiceActualiser::class.java),
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                else PendingIntent.getService(
+                    ctx, 3, Intent(ctx, ServiceActualiser::class.java),
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 v.setOnClickPendingIntent(R.id.w_actualiser, actualiser)

@@ -13,11 +13,53 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
+
+/**
+ * Appel PRIM partagé (worker et service du bouton ↻) : enregistre le résultat et redessine le widget.
+ * En cas d'erreur réseau, réessaie deux fois : au réveil du téléphone, le réseau peut mettre
+ * une à deux secondes à être de nouveau accessible pour l'appli.
+ */
+object MajPrim {
+    suspend fun executer(ctx: Context) {
+        val jeton = Stockage.jeton(ctx)
+        if (jeton.isEmpty()) {
+            Stockage.enregistrerErreur(ctx, "Jeton PRIM à saisir dans l'appli")
+            TransportWidget.dessiner(ctx)
+            return
+        }
+        var derniere: Exception? = null
+        for (essai in 0 until 3) {
+            if (essai > 0) delay(2_000L * essai)
+            try {
+                val etat = withContext(Dispatchers.IO) { Prim.calculer(jeton) }
+                Stockage.enregistrerSucces(ctx, etat)
+                derniere = null
+                break
+            } catch (e: Prim.PrimException) {
+                derniere = e
+                break // refus du jeton, quota : inutile de réessayer
+            } catch (e: Exception) {
+                derniere = e
+            }
+        }
+        derniere?.let { e ->
+            val message = when (e) {
+                is Prim.PrimException -> e.message ?: "Erreur PRIM"
+                is java.net.UnknownHostException, is java.net.SocketTimeoutException,
+                is java.net.ConnectException -> "Pas de réseau"
+                else -> "Données indisponibles (${e.javaClass.simpleName})"
+            }
+            Stockage.enregistrerErreur(ctx, message)
+        }
+        TransportWidget.dessiner(ctx)
+    }
+}
 
 /** Une mise à jour : appel PRIM, enregistrement, redessin du widget. */
 class RafraichirWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
@@ -46,25 +88,7 @@ class RafraichirWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker
             Stockage.enregistrerAppelAuto(ctx, System.currentTimeMillis())
         }
 
-        val jeton = Stockage.jeton(ctx)
-        if (jeton.isEmpty()) {
-            Stockage.enregistrerErreur(ctx, "Jeton PRIM à saisir dans l'appli")
-            TransportWidget.dessiner(ctx)
-            return Result.success()
-        }
-
-        try {
-            val etat = withContext(Dispatchers.IO) { Prim.calculer(jeton) }
-            Stockage.enregistrerSucces(ctx, etat)
-        } catch (e: Exception) {
-            val message = when (e) {
-                is Prim.PrimException -> e.message ?: "Erreur PRIM"
-                is java.net.UnknownHostException, is java.net.SocketTimeoutException -> "Pas de réseau"
-                else -> "Données indisponibles (${e.javaClass.simpleName})"
-            }
-            Stockage.enregistrerErreur(ctx, message)
-        }
-        TransportWidget.dessiner(ctx)
+        MajPrim.executer(ctx)
         return Result.success()
     }
 
