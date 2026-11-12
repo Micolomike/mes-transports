@@ -37,7 +37,7 @@ object MajPrim {
         for (essai in 0 until 3) {
             if (essai > 0) delay(2_000L * essai)
             try {
-                val etat = withContext(Dispatchers.IO) { Prim.calculer(jeton) }
+                val etat = withContext(Dispatchers.IO) { Prim.calculer(ctx, jeton) }
                 Stockage.enregistrerSucces(ctx, etat)
                 derniere = null
                 break

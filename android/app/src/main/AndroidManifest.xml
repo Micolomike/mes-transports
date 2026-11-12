@@ -28,6 +28,21 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ParametresActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".AjoutTrajetActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".WidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
         <service
             android:name=".ServiceActualiser"
             android:exported="false"

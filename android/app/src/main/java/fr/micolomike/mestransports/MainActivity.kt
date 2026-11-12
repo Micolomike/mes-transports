@@ -1,88 +1,45 @@
 package fr.micolomike.mestransports
 
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.appwidget.AppWidgetManager
-import android.content.ClipboardManager
-import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.provider.Settings
-import android.text.SpannableStringBuilder
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Switch
-import android.widget.TextView
-import android.widget.Toast
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import androidx.core.content.ContextCompat
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-/** Réglages : jeton PRIM, plages horaires, batterie ; aperçu du dernier état. */
+/** Écran principal : prochains départs détaillés de chaque trajet et infos trafic complètes. */
 class MainActivity : Activity() {
 
-    private lateinit var champJeton: EditText
-    private lateinit var apercu: TextView
-    private lateinit var boutonBatterie: Button
+    private lateinit var contenu: LinearLayout
+    private var enCours = false
 
-    private val ecoute = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> runOnUiThread { majApercu() } }
+    private val ecoute = SharedPreferences.OnSharedPreferenceChangeListener { _, cle ->
+        if (cle == Stockage.CLE_ETAT || cle == Stockage.CLE_ERREUR) runOnUiThread {
+            enCours = false
+            afficher()
+        }
+    }
     private val formatMaj = DateTimeFormatter.ofPattern("HH'h'mm").withZone(Prim.PARIS)
 
-    @SuppressLint("UseSwitchCompatOrMaterialCode")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        champJeton = findViewById(R.id.jeton)
-        apercu = findViewById(R.id.apercu)
-        boutonBatterie = findViewById(R.id.batterie)
-
-        champJeton.setText(Stockage.jeton(this))
-
-        findViewById<Button>(R.id.coller).setOnClickListener {
-            val presse = getSystemService(ClipboardManager::class.java)
-            val texte = presse?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString()
-            if (texte.isNullOrBlank()) toast("Presse-papiers vide") else champJeton.setText(texte.trim())
-        }
-
-        findViewById<Button>(R.id.enregistrer).setOnClickListener {
-            val jeton = champJeton.text.toString().trim()
-            if (jeton.isEmpty()) {
-                toast("Saisis le jeton PRIM")
-                return@setOnClickListener
-            }
-            Stockage.enregistrerJeton(this, jeton)
-            Planif.programmer(this)
-            Planif.maintenant(this)
-            toast("Jeton enregistré, mise à jour en cours")
-        }
-
-
-        findViewById<Button>(R.id.actualiser).setOnClickListener {
-            apercu.text = "Mise à jour…"
-            TransportWidget.dessiner(this, enCours = true)
-            Planif.maintenant(this)
-        }
-
-        boutonBatterie.setOnClickListener { demanderExclusionBatterie() }
-
-        findViewById<Button>(R.id.epingler).setOnClickListener { epinglerWidget() }
-
+        contenu = Ui.colonne(this, 16)
+        setContentView(ScrollView(this).apply {
+            isFillViewport = true
+            addView(contenu, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        })
         Planif.programmer(this)
     }
 
     override fun onResume() {
         super.onResume()
         Stockage.prefs(this).registerOnSharedPreferenceChangeListener(ecoute)
-        majApercu()
-        val pm = getSystemService(PowerManager::class.java)
-        val exclu = pm?.isIgnoringBatteryOptimizations(packageName) == true
-        boutonBatterie.text = if (exclu) "Batterie : appli déjà exclue de l'optimisation ✓" else "Exclure l'appli de l'optimisation de batterie"
-        boutonBatterie.isEnabled = !exclu
+        afficher()
     }
 
     override fun onPause() {
@@ -90,45 +47,129 @@ class MainActivity : Activity() {
         super.onPause()
     }
 
-    private fun majApercu() {
+    private fun actualiser() {
+        if (Stockage.jeton(this).isEmpty()) {
+            startActivity(Intent(this, ParametresActivity::class.java))
+            return
+        }
+        enCours = true
+        afficher()
+        TransportWidget.dessiner(this, enCours = true)
+        Planif.maintenant(this)
+    }
+
+    private fun afficher() {
+        contenu.removeAllViews()
         val etat = Stockage.etat(this)
         val erreur = Stockage.erreur(this)
-        val sb = SpannableStringBuilder()
-        if (etat == null) {
-            sb.append(if (erreur.isNotEmpty()) "⚠ $erreur" else "Aucune donnée pour l'instant.")
-        } else {
-            sb.append(etat.resume).append("\n")
-            etat.sens.forEach { s ->
-                sb.append("\n").append(s.libelle).append("\n")
-                sb.append(TransportWidget.departs(s.departs)).append("\n")
-            }
-            if (etat.detail.isNotEmpty()) sb.append("\n").append(etat.detail).append("\n")
-            sb.append("\nMise à jour : ").append(formatMaj.format(Instant.ofEpochMilli(etat.maj)))
-            if (erreur.isNotEmpty()) sb.append("\n⚠ Dernier essai : ").append(erreur)
+
+        // En-tête : point d'état, titre, actualiser, paramètres
+        val entete = Ui.ligne(this)
+        val niveau = if (etat == null || erreur.isNotEmpty()) Niveau.GRIS else etat.niveau
+        entete.addView(View(this).apply {
+            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.point)?.mutate()
+                ?.also { it.setTint(TransportWidget.couleur(niveau)) }
+            layoutParams = LinearLayout.LayoutParams(Ui.dp(context, 12), Ui.dp(context, 12))
+                .apply { marginEnd = Ui.dp(context, 10) }
+        })
+        entete.addView(Ui.extensible(Ui.texte(this, "Mes transports", 22f, gras = true)))
+        entete.addView(Ui.icone(this, "↻") { actualiser() })
+        entete.addView(Ui.icone(this, "⚙") { startActivity(Intent(this, ParametresActivity::class.java)) })
+        contenu.addView(entete)
+
+        val statut = when {
+            enCours -> "Mise à jour…"
+            etat != null -> "Mise à jour à " + formatMaj.format(Instant.ofEpochMilli(etat.maj))
+            else -> ""
         }
-        apercu.text = sb
-        findViewById<View>(R.id.point).background.mutate().setTint(
-            TransportWidget.couleur(if (etat == null || erreur.isNotEmpty()) Niveau.GRIS else etat.niveau)
+        if (statut.isNotEmpty()) contenu.addView(Ui.texte(this, statut, 13f, pale = true))
+        if (erreur.isNotEmpty()) contenu.addView(Ui.texte(this, "⚠ $erreur", 14f).apply { setTextColor(TransportWidget.ORANGE) })
+
+        if (Stockage.jeton(this).isEmpty()) {
+            contenu.addView(Ui.carte(this).apply {
+                addView(Ui.texte(this@MainActivity, "Bienvenue", 17f, gras = true))
+                addView(Ui.texte(this@MainActivity, "Saisis ton jeton PRIM dans les paramètres, puis touche ↻.", 14f, pale = true))
+                addView(Ui.bouton(this@MainActivity, "Ouvrir les paramètres") {
+                    startActivity(Intent(this@MainActivity, ParametresActivity::class.java))
+                })
+            })
+            return
+        }
+
+        if (etat == null) {
+            contenu.addView(Ui.texte(this, "\nAucune donnée : touche ↻ pour charger les départs.", 15f, pale = true))
+            return
+        }
+
+        contenu.addView(Ui.texte(this, etat.resume, 15f).apply { setPadding(0, Ui.dp(context, 10), 0, 0) })
+
+        // Trajets
+        val trajets = Stockage.trajets(this)
+        val ids = trajets.map { it.id }.toSet()
+        for (b in Prim.ordonner(etat.blocs.filter { it.trajetId in ids }, trajets)) contenu.addView(carteTrajet(b))
+
+        // Infos trafic
+        if (etat.incidents.isNotEmpty()) {
+            contenu.addView(Ui.titre(this, "Infos trafic"))
+            for (i in etat.incidents) contenu.addView(carteIncident(i))
+        }
+
+        contenu.addView(
+            Ui.texte(
+                this,
+                "\n~ : horaire prévu, absent du temps réel. Retard et suppression inconnus pour ce train.",
+                12f, pale = true,
+            )
         )
     }
 
-    @SuppressLint("BatteryLife")
-    private fun demanderExclusionBatterie() {
-        try {
-            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
-        } catch (e: Exception) {
-            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+    private fun carteTrajet(b: Bloc) = Ui.carte(this).apply {
+        val haut = Ui.ligne(context)
+        haut.addView(Ui.pastille(context, b.ligne, 32))
+        haut.addView(Ui.extensible(Ui.colonne(context).apply {
+            addView(Ui.texte(context, b.libelle, 16f, gras = true))
+            addView(Ui.texte(context, b.ligne.nom, 12f, pale = true))
+        }))
+        addView(haut)
+
+        if (b.departs.isEmpty()) {
+            addView(Ui.texte(context, b.erreur.ifEmpty { "Aucun départ annoncé" }, 14f, pale = true)
+                .apply { setPadding(0, Ui.dp(context, 10), 0, 0) })
+            return@apply
         }
+        for (d in b.departs) addView(ligneDepart(d))
     }
 
-    private fun epinglerWidget() {
-        val mgr = getSystemService(AppWidgetManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mgr != null && mgr.isRequestPinAppWidgetSupported) {
-            mgr.requestPinAppWidget(ComponentName(this, TransportWidget::class.java), null, null)
-        } else {
-            toast("Appui long sur l'écran d'accueil > Widgets > Mes transports")
+    private fun ligneDepart(d: Depart) = Ui.ligne(this).apply {
+        setPadding(0, Ui.dp(context, 10), 0, 0)
+        addView(Ui.texte(context, TransportWidget.heure(d), 17f).apply {
+            layoutParams = LinearLayout.LayoutParams(Ui.dp(context, 72), ViewGroup.LayoutParams.WRAP_CONTENT)
+        })
+        addView(Ui.extensible(Ui.colonne(context).apply {
+            addView(Ui.texte(context, Trajet.raccourci(d.destination).ifEmpty { "Destination non précisée" }, 14f))
+            val infos = listOfNotNull(
+                d.mission.ifEmpty { null },
+                if (d.voie.isNotEmpty()) "voie ${d.voie}" else null,
+            ).joinToString(" · ")
+            if (infos.isNotEmpty()) addView(Ui.texte(context, infos, 12f, pale = true))
+        }))
+        val (etatTexte, couleur) = when {
+            d.supprime -> Pair("Supprimé", TransportWidget.ROUGE)
+            d.theorique -> Pair("Prévu", TransportWidget.ENCRE_PALE)
+            d.retard > 0 -> Pair("+${d.retard} min", TransportWidget.couleurRetard(d.retard))
+            else -> Pair("À l'heure", TransportWidget.VERT)
         }
+        addView(Ui.texte(context, etatTexte, 13f, gras = true).apply { setTextColor(couleur) })
     }
 
-    private fun toast(t: String) = Toast.makeText(this, t, Toast.LENGTH_SHORT).show()
+    private fun carteIncident(i: Incident) = Ui.carte(this).apply {
+        val haut = Ui.ligne(context)
+        haut.addView(Ui.pastille(context, i.ligne, 24))
+        haut.addView(Ui.extensible(Ui.texte(context, i.titre.ifEmpty { i.ligne.nom }, 15f, gras = true).apply {
+            if (i.bloquant) setTextColor(TransportWidget.ROUGE)
+        }))
+        addView(haut)
+        if (i.texte.isNotEmpty() && i.texte != i.titre)
+            addView(Ui.texte(context, i.texte, 13f, pale = true).apply { setPadding(0, Ui.dp(context, 8), 0, 0) })
+    }
 }

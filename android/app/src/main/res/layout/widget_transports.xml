@@ -8,9 +8,10 @@
     android:paddingStart="14dp"
     android:paddingTop="10dp"
     android:paddingEnd="8dp"
-    android:paddingBottom="10dp">
+    android:paddingBottom="8dp">
 
     <LinearLayout
+        android:id="@+id/w_entete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -27,7 +28,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trajet"
+            android:text="Mes transports"
             android:textColor="@color/encre"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -61,34 +62,21 @@
         android:textColor="@color/encre"
         android:textSize="13sp" />
 
-    <TextView
-        android:id="@+id/w_sens1"
-        style="@style/WidgetSens"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/w_departs1"
-        style="@style/WidgetDeparts"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/w_sens2"
-        style="@style/WidgetSens"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/w_departs2"
-        style="@style/WidgetDeparts"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/w_detail"
+    <ListView
+        android:id="@+id/w_liste"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:ellipsize="end"
-        android:maxLines="3"
+        android:layout_height="match_parent"
+        android:layout_marginTop="2dp"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:scrollbars="none" />
+
+    <TextView
+        android:id="@+id/w_vide"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="Toucher ↻ pour charger les départs"
         android:textColor="@color/encre_pale"
-        android:textSize="11sp"
-        android:visibility="gone" />
+        android:textSize="12sp" />
 </LinearLayout>
