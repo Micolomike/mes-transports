@@ -63,7 +63,13 @@ object Prim {
     private val FORMAT_HEURE = DateTimeFormatter.ofPattern("HH'h'mm").withZone(PARIS)
 
     private data class Incident(val ligne: String, val titre: String, val bloquant: Boolean)
-    private data class Passage(val attendu: Instant, val retardMin: Int, val supprime: Boolean, val destination: String)
+    private data class Passage(
+        val attendu: Instant, val retardMin: Int, val supprime: Boolean, val destination: String,
+        val prevu: Instant? = null,
+    )
+
+    /** Identifiants Navitia des gares (stop_area), trouvés une fois puis gardés en mémoire. */
+    private val idsNavitia = mutableMapOf<String, String>()
 
     class PrimException(message: String) : Exception(message)
 
@@ -72,10 +78,10 @@ object Prim {
         val incidents = lireIncidents(cle, CODE_RER_E, "RER E", GARES_TRAJET_RER_E, GARES_HORS_TRAJET_RER_E) +
             lireIncidents(cle, CODE_M14, "Ligne 14", GARES_TRAJET_M14, GARES_HORS_TRAJET_M14)
 
-        val versTournan = lirePassages(cle, REF_HAUSSMANN)
+        val versTournan = completer(cle, lirePassages(cle, REF_HAUSSMANN), "haussmann")
             .filter { p -> BRANCHE_TOURNAN.any { sansAccents(p.destination).contains(it) } }
             .take(3)
-        val versParis = lirePassages(cle, REF_EMERAINVILLE)
+        val versParis = completer(cle, lirePassages(cle, REF_EMERAINVILLE), "emerainville")
             .filter { p -> EXCLURE_VERS_PARIS.none { sansAccents(p.destination).contains(it) } }
             .take(3)
 
@@ -203,10 +209,62 @@ object Prim {
                 val retard = if (prevu != null) Math.floorDiv(Duration.between(prevu, attendu).seconds, 60L).toInt() else 0
                 val destination = valeur(appel, "DestinationDisplay").ifEmpty { valeur(mvj, "DestinationName") }
 
-                res.add(Passage(attendu, maxOf(retard, 0), statut.contains("cancel"), destination))
+                res.add(Passage(attendu, maxOf(retard, 0), statut.contains("cancel"), destination, prevu))
             }
         }
         return res.sortedBy { it.attendu }
+    }
+
+    /**
+     * Le flux temps réel (stop-monitoring) omet parfois des trains bien prévus au service
+     * (ex. 12/11/2026 : TINU de 16h44 et 17h29 absents à Haussmann, présents dans l'appli SNCF).
+     * On ajoute donc les départs de l'horaire théorique Navitia qui n'ont pas d'équivalent
+     * temps réel (même heure prévue à 90 s près). En cas d'échec, on garde le temps réel seul.
+     */
+    private fun completer(cle: String, tempsReel: List<Passage>, gare: String): List<Passage> {
+        val theoriques = try {
+            lireTheorique(cle, gare)
+        } catch (e: Exception) {
+            return tempsReel
+        }
+        val limite = Instant.now().minusSeconds(60)
+        val ajouts = theoriques.filter { t ->
+            !t.attendu.isBefore(limite) && tempsReel.none { r ->
+                val ref = r.prevu ?: r.attendu
+                Math.abs(Duration.between(ref, t.attendu).seconds) <= 90
+            }
+        }
+        return (tempsReel + ajouts).sortedBy { it.attendu }
+    }
+
+    private fun idNavitia(cle: String, gare: String): String? {
+        idsNavitia[gare]?.let { return it }
+        val url = "$BASE/v2/navitia/lines/${Uri.encode("line:IDFM:$CODE_RER_E")}/stop_areas?count=100"
+        for (sa in objets(get(url, cle).optJSONArray("stop_areas"))) {
+            val nom = sansAccents(chaine(sa, "name"))
+            val id = chaine(sa, "id")
+            if (id.isEmpty()) continue
+            if (nom.contains("haussmann")) idsNavitia["haussmann"] = id
+            if (nom.contains("emerainville")) idsNavitia["emerainville"] = id
+        }
+        return idsNavitia[gare]
+    }
+
+    private fun lireTheorique(cle: String, gare: String): List<Passage> {
+        val id = idNavitia(cle, gare) ?: return emptyList()
+        val depuis = LocalDateTime.now(PARIS).minusMinutes(2).format(FORMAT_NAVITIA)
+        val url = "$BASE/v2/navitia/lines/${Uri.encode("line:IDFM:$CODE_RER_E")}/stop_areas/${Uri.encode(id)}" +
+            "/departures?count=40&data_freshness=base_schedule&from_datetime=$depuis"
+        val res = mutableListOf<Passage>()
+        for (d in objets(get(url, cle).optJSONArray("departures"))) {
+            val sdt = d.optJSONObject("stop_date_time") ?: continue
+            val heure = dateNavitia(chaine(sdt, "base_departure_date_time").ifEmpty { chaine(sdt, "departure_date_time") })
+                ?: continue
+            val di = d.optJSONObject("display_informations")
+            val destination = di?.let { chaine(it, "direction").ifEmpty { chaine(it, "headsign") } } ?: ""
+            res.add(Passage(heure.atZone(PARIS).toInstant(), 0, false, destination))
+        }
+        return res
     }
 
     // ---------------------------------------------------------------- utilitaires
