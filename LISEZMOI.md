@@ -9,6 +9,18 @@ Widget Android d'écran d'accueil pour le trajet RER E (Emerainville ↔ Haussma
 - Les 3 prochains départs dans chaque sens : Emerainville → St-Lazare et St-Lazare → Tournan, avec le retard (+3) ou la suppression. Le matin, le sens vers Paris est en premier ; l'après-midi, le retour.
 - Le bouton ↻ actualise immédiatement ; un appui ailleurs ouvre l'appli.
 
+## Carte des transports
+
+Bouton 🗺 de l'écran principal : carte OpenStreetMap avec les tracés officiels du réseau ferré IDFM (métro, RER, Transilien, tram) aux couleurs des lignes, et les gares à partir d'un zoom de quartier. Toucher une ligne ou une gare affiche son nom.
+
+- « Me localiser » : affiche ta position et la suit (autorisation de localisation demandée au premier appui).
+- Bouton de fond : plan clair, plan sombre, ou plan « bus » (ÖPNVKarte, qui montre aussi les lignes de bus).
+- Les tracés viennent des données ouvertes d'IDFM (sans jeton, hors quota PRIM) : téléchargés à la première ouverture, puis gardés 30 jours.
+
+## Ordre des trajets
+
+Dans Paramètres, faire glisser un trajet avec la poignée ≡ (ou appui long sur sa carte) pour changer l'ordre.
+
 ## Mises à jour
 
 - Automatiques toutes les 15 minutes (minimum imposé par Android pour une tâche de fond).

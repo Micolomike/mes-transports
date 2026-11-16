@@ -73,6 +73,7 @@ class MainActivity : Activity() {
                 .apply { marginEnd = Ui.dp(context, 10) }
         })
         entete.addView(Ui.extensible(Ui.texte(this, "Mes transports", 22f, gras = true)))
+        entete.addView(Ui.icone(this, "🗺") { startActivity(Intent(this, CarteActivity::class.java)) })
         entete.addView(Ui.icone(this, "↻") { actualiser() })
         entete.addView(Ui.icone(this, "⚙") { startActivity(Intent(this, ParametresActivity::class.java)) })
         contenu.addView(entete)
