@@ -189,7 +189,7 @@ object Stockage {
     private const val CLE_DERNIER_APPEL = "dernier_appel_auto"
     const val CLE_ERREUR = "erreur"
     private const val CLE_TRAJETS = "trajets"
-    private const val CLE_DESSERTE = "cache_desserte"
+    private const val CLE_DESSERTE = "cache_desserte2" // v2 : entrées datées (l'ancien cache, sans date, est abandonné)
     private const val CLE_GARES = "cache_gares"
 
     fun prefs(ctx: Context) = ctx.getSharedPreferences(FICHIER, Context.MODE_PRIVATE)
@@ -249,18 +249,39 @@ object Stockage {
 
     // ---------------------------------------------------------------- caches
 
-    /** Desserte : "le train de telle mission / destination, au départ de A, s'arrête-t-il à B ?" */
+    /**
+     * Desserte : "le train de telle mission / destination, au départ de A, s'arrête-t-il à B ?"
+     * Une réponse "oui" est gardée 7 jours, une réponse "non" 1 jour : un "non" erroné
+     * (gare mal reconnue, horaires changés) ne bloque plus un trajet indéfiniment.
+     */
     fun desserte(ctx: Context): MutableMap<String, Boolean> {
-        val o = try { JSONObject(prefs(ctx).getString(CLE_DESSERTE, "{}") ?: "{}") } catch (e: Exception) { JSONObject() }
         val m = mutableMapOf<String, Boolean>()
-        o.keys().forEach { k -> m[k] = o.optBoolean(k) }
+        val maintenant = System.currentTimeMillis()
+        lireDesserte(ctx).forEach { (k, e) ->
+            val duree = if (e.first) 7 * JOUR else JOUR
+            if (maintenant - e.second in 0 until duree) m[k] = e.first
+        }
         return m
     }
 
     fun enregistrerDesserte(ctx: Context, m: Map<String, Boolean>) {
+        val avant = lireDesserte(ctx)
+        val maintenant = System.currentTimeMillis()
         val o = JSONObject()
-        m.forEach { (k, v) -> o.put(k, v) }
+        m.forEach { (k, v) ->
+            val t = avant[k]?.takeIf { it.first == v }?.second ?: maintenant
+            o.put(k, JSONObject().put("v", v).put("t", t))
+        }
         prefs(ctx).edit().putString(CLE_DESSERTE, o.toString()).apply()
+    }
+
+    private const val JOUR = 24 * 3600 * 1000L
+
+    private fun lireDesserte(ctx: Context): Map<String, Pair<Boolean, Long>> {
+        val o = try { JSONObject(prefs(ctx).getString(CLE_DESSERTE, "{}") ?: "{}") } catch (e: Exception) { JSONObject() }
+        val m = mutableMapOf<String, Pair<Boolean, Long>>()
+        o.keys().forEach { k -> o.optJSONObject(k)?.let { m[k] = Pair(it.optBoolean("v"), it.optLong("t")) } }
+        return m
     }
 
     /** Noms des gares par ligne et des gares traversées par trajet (pertinence des infos trafic). */
