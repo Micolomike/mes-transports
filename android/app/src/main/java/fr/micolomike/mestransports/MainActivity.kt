@@ -9,6 +9,11 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -17,22 +22,20 @@ class MainActivity : Activity() {
 
     private lateinit var contenu: LinearLayout
     private var enCours = false
+    private val portee = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val ecoute = SharedPreferences.OnSharedPreferenceChangeListener { _, cle ->
-        if (cle == Stockage.CLE_ETAT || cle == Stockage.CLE_ERREUR) runOnUiThread {
-            enCours = false
-            afficher()
-        }
+        if (cle == Stockage.CLE_ETAT || cle == Stockage.CLE_ERREUR) runOnUiThread { afficher() }
     }
     private val formatMaj = DateTimeFormatter.ofPattern("HH'h'mm").withZone(Prim.PARIS)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         contenu = Ui.colonne(this, 16)
-        setContentView(ScrollView(this).apply {
+        setContentView(Ui.margesSysteme(ScrollView(this).apply {
             isFillViewport = true
             addView(contenu, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        })
+        }))
         Planif.programmer(this)
     }
 
@@ -52,10 +55,25 @@ class MainActivity : Activity() {
             startActivity(Intent(this, ParametresActivity::class.java))
             return
         }
+        if (enCours) return
         enCours = true
         afficher()
         TransportWidget.dessiner(this, enCours = true)
-        Planif.maintenant(this)
+        // Appel fait par l'appli ouverte (et non par une tâche de fond) : One UI coupe souvent le
+        // réseau des tâches de fond, et l'écran restait bloqué sur « Mise à jour… ».
+        portee.launch {
+            try {
+                MajPrim.executer(applicationContext)
+            } finally {
+                enCours = false
+                afficher()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        portee.cancel()
+        super.onDestroy()
     }
 
     private fun afficher() {

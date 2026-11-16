@@ -2,11 +2,13 @@ package fr.micolomike.mestransports
 
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -88,6 +90,25 @@ object Ui {
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(ctx, taille))
             .apply { marginEnd = dp(ctx, 12) }
         adjustViewBounds = true
+    }
+
+    /**
+     * Android 15 dessine l'appli sous la barre d'état et la barre de navigation :
+     * on décale le contenu d'autant (clavier compris) pour qu'il ne passe pas dessous.
+     */
+    fun <T : View> margesSysteme(v: T): T = v.apply {
+        if (this is ViewGroup) clipToPadding = false
+        setOnApplyWindowInsetsListener { vue, insets ->
+            val (h, b) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val i = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.ime())
+                i.top to i.bottom
+            } else {
+                @Suppress("DEPRECATION")
+                insets.systemWindowInsetTop to insets.systemWindowInsetBottom
+            }
+            vue.setPadding(0, h, 0, b)
+            insets
+        }
     }
 
     /** Vue qui prend la place restante d'une ligne horizontale. */

@@ -19,7 +19,6 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
 import android.view.HapticFeedbackConstants
-import android.view.WindowInsets
 
 /** Paramètres : jeton PRIM, trajets (ajout, ordre, moment, suppression), widget, batterie. */
 class ParametresActivity : Activity() {
@@ -33,20 +32,8 @@ class ParametresActivity : Activity() {
         contenu = Ui.colonne(this, 16)
         defilement = ScrollView(this).apply {
             addView(contenu, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            // Android 15 dessine sous les barres système : marge pour atteindre le bas de la page
-            clipToPadding = false
-            setOnApplyWindowInsetsListener { v, insets ->
-                val (h, b) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val i = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.ime())
-                    i.top to i.bottom
-                } else {
-                    @Suppress("DEPRECATION")
-                    insets.systemWindowInsetTop to insets.systemWindowInsetBottom
-                }
-                v.setPadding(0, h, 0, b)
-                insets
-            }
         }
+        Ui.margesSysteme(defilement)
         setContentView(defilement)
         champJeton = Ui.champ(this, "Jeton d'API PRIM").apply { setText(Stockage.jeton(this@ParametresActivity)) }
     }

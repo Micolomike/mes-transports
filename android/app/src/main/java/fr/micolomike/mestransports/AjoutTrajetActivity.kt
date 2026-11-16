@@ -52,9 +52,9 @@ class AjoutTrajetActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         contenu = Ui.colonne(this, 16)
-        setContentView(ScrollView(this).apply {
+        setContentView(Ui.margesSysteme(ScrollView(this).apply {
             addView(contenu, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        })
+        }))
         if (Stockage.jeton(this).isEmpty()) {
             toast("Enregistre d'abord ton jeton PRIM")
             finish()
