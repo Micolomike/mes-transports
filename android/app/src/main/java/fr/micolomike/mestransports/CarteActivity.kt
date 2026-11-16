@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.location.LocationManager
 import android.os.Build
@@ -35,7 +37,6 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.FolderOverlay
 import org.osmdroid.views.overlay.Polyline
-import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
@@ -67,6 +68,14 @@ class CarteActivity : Activity() {
         "OPNVKarte", 0, 18, 256, ".png", arrayOf("https://tileserver.memomaps.de/tilegen/"),
         "© OpenStreetMap, ÖPNVKarte (memomaps.de)",
     )
+
+    /** Plan sombre : couleurs du plan inversées et légèrement atténuées. */
+    private val inverse = ColorMatrixColorFilter(ColorMatrix(floatArrayOf(
+        -0.85f, 0f, 0f, 0f, 225f,
+        0f, -0.85f, 0f, 0f, 230f,
+        0f, 0f, -0.85f, 0f, 235f,
+        0f, 0f, 0f, 1f, 0f,
+    )))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,7 +192,7 @@ class CarteActivity : Activity() {
 
     private fun appliquerFond() {
         carte.setTileSource(if (fond == Fond.BUS) fondBus else TileSourceFactory.MAPNIK)
-        carte.overlayManager.tilesOverlay.setColorFilter(if (fond == Fond.SOMBRE) TilesOverlay.INVERTED_COLORS else null)
+        carte.overlayManager.tilesOverlay.setColorFilter(if (fond == Fond.SOMBRE) inverse else null)
         boutonFond.text = fond.libelle
         credits.text = if (fond == Fond.BUS) "© OpenStreetMap · ÖPNVKarte · IDFM" else "© contributeurs OpenStreetMap · IDFM"
         carte.invalidate()
