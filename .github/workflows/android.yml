@@ -46,10 +46,15 @@ jobs:
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
-        run: >-
-          gradle assembleRelease --no-daemon --stacktrace
-          -PappVersionCode=${{ github.run_number }}
-          -PappVersionName=1.0.${{ github.run_number }}
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon --stacktrace \
+            -PappVersionCode=${{ github.run_number }} \
+            -PappVersionName=1.0.${{ github.run_number }} 2>&1 | tee ../compilation.log || {
+            # Erreurs de compilation reprises en annotations (visibles sans ouvrir les journaux)
+            grep -E "^e: |error:|What went wrong|Could not" ../compilation.log | head -30 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          }
 
       - name: Nommer l'APK
         run: cp android/app/build/outputs/apk/release/app-release.apk mes-transports.apk
